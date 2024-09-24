@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Expense Tracker with Video Background</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            height: 100%;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+
+        .video-background {
+            position: fixed; /* Ensure it stays in the background */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0; /* Set behind other elements */
+            overflow: hidden;
+        }
+
+        .video-background video {
+            width: 100%; /* Cover full width */
+            height: 100%; /* Cover full height */
+            object-fit: cover; /* Maintain aspect ratio */
+            opacity: 50%;
+        }
+
+        .navbar {
+            position: sticky;
+            top: 0;
+            background-color: rgba(0, 123, 255, 0.8);
+            padding: 15px;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .navbar a {
+            color: white;
+            margin: 0 15px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between; /* Space out Expenses and Budgeting sections */
+            margin: 50px; /* Margin around the container */
+            z-index: 1; /* Position above the video */
+            position: relative; /* Ensure it appears above the video */
+        }
+
+        .expense-section, .budgeting-section {
+            flex: 1; /* Make both sections take equal space */
+            background: rgba(255, 255, 255, 0.9); /* More opaque background for better visibility */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin: 10px; /* Space between sections */
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        /* Set consistent width for inputs and buttons */
+        #expenseInput, 
+        #expenseAmount, 
+        #allowanceInput, 
+        #budgetExpenseName, 
+        #budgetExpenseAmount {
+            width: 100%; /* Full width */
+            max-width: 300px; /* Limit max width for better appearance */
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 2px solid #007bff;
+            border-radius: 5px;
+        }
+
+        .add-btn {
+            width: 100%; /* Full width for buttons */
+            max-width: 300px; /* Match button size with inputs */
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .add-btn:hover {
+            background-color: #0056b3;
+        }
+
+        ul {
+            list-style: none;
+            margin-top: 20px;
+        }
+
+        li {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .delete-btn {
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .remaining-balance, .total-expenses {
+            margin-top: 20px;
+            font-size: 18px;
+            color: green;
+            text-align: center;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            background-color: rgba(0, 123, 255, 0.8);
+            color: white;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="video-background">
+        <video autoplay loop muted>
+            <source src="Underwater Effect with Particles Free Background Videos, No Copyright .mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <div class="navbar">
+        <a href="#about" onclick="scrollToSection('about')">About Us</a>
+        <a href="#contact" onclick="scrollToSection('contact')">Contact</a>
+        <a href="#tutorial" onclick="scrollToSection('tutorial')">Tutorial</a>
+    </div>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <div class="container">
+        <div class="expense-section">
+            <h1>Expenses</h1>
+            <input type="text" id="expenseInput" placeholder="Enter expense category...">
+            <input type="number" id="expenseAmount" placeholder="Enter amount in PHP...">
+            <button class="add-btn" onclick="addExpense()">Add Expense</button>
+            <ul id="expenseList"></ul>
+            <div class="total-expenses" id="totalExpenses">Total Expenses: ₱0.00</div>
+        </div>
+
+        <div class="budgeting-section">
+            <h1>Budgeting</h1>
+            <input type="number" id="allowanceInput" placeholder="Enter your allowance in PHP...">
+            <div>
+                <button class="add-btn" onclick="setAllowance()">Set Allowance</button>
+            </div>
+            <br>
+            <br>
+            <div>
+                <h2>Expenses</h2>
+                <ul id="budgetExpenseList"></ul>
+                <input type="text" id="budgetExpenseName" placeholder="Expense name...">
+                <input type="number" id="budgetExpenseAmount" placeholder="Expense amount in PHP...">
+                <button class="add-btn" onclick="addBudgetExpense()">Add to Budget</button>
+            </div>
+            <div class="remaining-balance" id="remainingBalance"></div>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2024 Personal Expense Tracker
+    </footer>
+
+    <script>
+        let expenses = [];
+        let budgetExpenses = [];
+        let totalAllowance = 0;
+
+        function addExpense() {
+            const expenseInput = document.getElementById('expenseInput');
+            const expenseAmount = document.getElementById('expenseAmount');
+            const expenseValue = expenseInput.value.trim();
+            const expenseValueAmount = parseFloat(expenseAmount.value);
+
+            if (expenseValue === '' || isNaN(expenseValueAmount)) {
+                alert('Please fill in both fields');
+                return;
+            }
+
+            expenses.push({ category: expenseValue, amount: expenseValueAmount });
+            expenseInput.value = '';
+            expenseAmount.value = '';
+
+            renderExpenses();
+            updateTotalExpenses(); // Update total expenses after adding
+        }
+
+        function renderExpenses() {
+            const expenseList = document.getElementById('expenseList');
+            expenseList.innerHTML = '';
+            expenses.forEach((expense, index) => {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `${expense.category}: ₱${expense.amount.toFixed(2)} <button class="delete-btn" onclick="deleteExpense(${index})">Delete</button>`;
+                expenseList.appendChild(listItem);
+            });
+        }
+
+        function deleteExpense(index) {
+            expenses.splice(index, 1);
+            renderExpenses();
+            updateTotalExpenses(); // Update total expenses after deletion
+        }
+
+        function updateTotalExpenses() {
+            const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+            document.getElementById('totalExpenses').innerHTML = `Total Expenses: ₱${totalExpenses.toFixed(2)}`;
+        }
+
+        function setAllowance() {
+            const allowanceInput = document.getElementById('allowanceInput');
+            const allowanceValue = parseFloat(allowanceInput.value);
+
+            if (isNaN(allowanceValue)) {
+                alert('Please enter a valid allowance amount');
+                return;
+            }
+
+            totalAllowance = allowanceValue;
+            allowanceInput.value = '';
+            updateRemainingBalance();
+        }
+
+        function addBudgetExpense() {
+            const budgetExpenseName = document.getElementById('budgetExpenseName');
+            const budgetExpenseAmount = document.getElementById('budgetExpenseAmount');
+            const budgetExpenseValue = budgetExpenseName.value.trim();
+            const budgetExpenseValueAmount = parseFloat(budgetExpenseAmount.value);
+
+            if (budgetExpenseValue === '' || isNaN(budgetExpenseValueAmount)) {
+                alert('Please fill in both fields');
+                return;
+            }
+
+            budgetExpenses.push({ name: budgetExpenseValue, amount: budgetExpenseValueAmount });
+            budgetExpenseName.value = '';
+            budgetExpenseAmount.value = '';
+
+            totalAllowance -= budgetExpenseValueAmount; // Deduct from total allowance
+            renderBudgetExpenses();
+            updateRemainingBalance();
+        }
+
+        function renderBudgetExpenses() {
+            const budgetExpenseList = document.getElementById('budgetExpenseList');
+            budgetExpenseList.innerHTML = '';
+            budgetExpenses.forEach(expense => {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `${expense.name}: ₱${expense.amount.toFixed(2)}`;
+                budgetExpenseList.appendChild(listItem);
+            });
+        }
+
+        function updateRemainingBalance() {
+            const remainingBalance = document.getElementById('remainingBalance');
+            remainingBalance.innerHTML = `Remaining Allowance: ₱${totalAllowance.toFixed(2)}`;
+        }
+
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            section.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
